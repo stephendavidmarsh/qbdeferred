@@ -45,9 +45,9 @@ var table = new QBTable(
 
 function shouldFail(d) {
   return d.pipe(
-    $.safely(function () {
+    function () {
       throw "Call suceeded when it should have failed"
-    }),
+    },
     function () {
       return (new $.Deferred).resolve()
     }
@@ -86,7 +86,7 @@ function runSetups(setups) {
     bigD = bigD.pipe(function () {
       var sd = table.deleteAll()
       if ('setup' in setup)
-        sd = sd.pipe(function () { return $.safely(setup.setup)() })
+        sd = sd.pipe(setup.setup)
       sd = sd.pipe(
         function (fromSetup) {
           return $.traverse(tests, function (test) {
@@ -138,30 +138,30 @@ runSetups([
     tests: [
       ["query with query string",
        function () {
-         return table.query("{3.GT.'0'}", 3).pipe($.safely(function (x) {
+         return table.query("{3.GT.'0'}", 3).pipe(function (x) {
            assert(x.length == 3)
-         }))
+         })
        }
       ],
       ["query with simple structure",
        function () {
-         return table.query({thetext: 'asd'}, 3).pipe($.safely(function (x) {
+         return table.query({thetext: 'asd'}, 3).pipe(function (x) {
            assert(x.length == 1)
-         }))
+         })
        }
       ],
       ["query with complex structure",
        function () {
-         return table.query({thetext: {xex: 'asd'}}, 3).pipe($.safely(function (x) {
+         return table.query({thetext: {xex: 'asd'}}, 3).pipe(function (x) {
            assert(x.length == 2)
-         }))
+         })
        }
       ],
       ["query with slist with desc",
        function () {
-         return table.query('', 'thetext', {desc: 'thetext'}).pipe($.safely(function (x) {
+         return table.query('', 'thetext', {desc: 'thetext'}).pipe(function (x) {
            assert(x[0] == 'qwe')
-         }))
+         })
        }
       ],
       ["query with }",
@@ -171,16 +171,16 @@ runSetups([
       ],
       ["query with skip",
        function () {
-         return table.query('', 3, 3, {skip: 1}).pipe($.safely(function (x) {
+         return table.query('', 3, 3, {skip: 1}).pipe(function (x) {
            assert(x.length == 2)
-         }))
+         })
        }
       ],
       ["query with limit",
        function () {
-         return table.query('', 3, 3, {limit: 2}).pipe($.safely(function (x) {
+         return table.query('', 3, 3, {limit: 2}).pipe(function (x) {
            assert(x.length == 2)
-         }))
+         })
        }
       ]
     ]
@@ -195,9 +195,9 @@ runSetups([
           .pipe(function () {
             return table.query('', ['thebool', 'thetext'])
           })
-          .pipe($.safely(function (x) {
+          .pipe(function (x) {
             assert(x[0].thetext, row.thetext)
-          }))
+          })
       }
     ]
   },
@@ -226,22 +226,22 @@ runSetups([
       ["add with multiple records, different columns, and RID return",
        function (fromSetup) {
               return table.query('', 3)
-                .pipe($.safely(function (rids2) {
+                .pipe(function (rids2) {
                   assert(arraysEqual(fromSetup.rids, rids2))
-                }))
+                })
             }
       ],
       ["add with CSV poison",
        function (fromSetup) {
          return table.query('', 'thetext')
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              var rowsText = $.map(fromSetup.rows, function (r) {
                if (!('thetext' in r))
                  return ''
                return r.thetext
              })
              assert(arraysEqual(x, rowsText))
-           }))
+           })
        }
       ]
     ]
@@ -259,9 +259,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'a1'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 1)
-           }))
+           })
        }
       ],
       ["update with multiple rids",
@@ -274,9 +274,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'd2'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 2)
-           }))
+           })
        }
       ],
       ["update with one rid in object",
@@ -289,9 +289,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'b1'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 1)
-           }))
+           })
        }
       ],
       ["update with rids in multiple objects",
@@ -305,9 +305,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'c2'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 2)
-           }))
+           })
        }
       ],
       ["update with query",
@@ -321,9 +321,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'e1'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 1)
-           }))
+           })
        }
       ],
       ["update with query with no matches",
@@ -337,9 +337,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'f2'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 0)
-           }))
+           })
        }
       ]
     ]
@@ -357,9 +357,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'a'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 1)
-           }))
+           })
        }
       ],
       ["delete with multiple rids",
@@ -374,9 +374,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'b'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 2)
-           }))
+           })
        }
       ],
       ["delete with query",
@@ -389,9 +389,9 @@ runSetups([
            .pipe(function () {
              return table.query({thetext: 'c'}, 3)
            })
-           .pipe($.safely(function (x) {
+           .pipe(function (x) {
              assert(x.length == 1)
-           }))
+           })
        }
       ],
       ["delete with '' should fail",
@@ -399,9 +399,9 @@ runSetups([
          return table.delete('')
        }, true
       ],
-      ["delete with 0 should fail",
+      ["delete with 1000000 should fail",
        function () {
-         return table.delete(0)
+         return table.delete(1000000)
        }, true
       ]
     ]
@@ -418,9 +418,9 @@ runSetups([
           .pipe(function () {
             return table.query('', 3)
           })
-          .pipe($.safely(function (x) {
+          .pipe(function (x) {
             assert(x.length == 0)
-          }))
+          })
       }
     ]
   }

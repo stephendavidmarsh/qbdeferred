@@ -31,6 +31,28 @@ $.traverse = function (arr, f) {
   return $.when.apply($, $.map(arr, f))
 }
 
+// Hack to make JQuery's Deferred.pipe method handle exceptions correctly
+$.orig_Deferred = $.Deferred
+$.Deferred = function () {
+  var d = $.orig_Deferred.apply($, arguments)
+  d.origPipe = d.pipe
+  d.pipe = function (done, fail, progress) {
+    if (done)
+      done = $.safely(done)
+    if (fail)
+      fail = $.safely(fail)
+    return this.origPipe(done, fail, progress)
+  }
+  d.origPromise = d.promise
+  d.promise = function (obj) {
+    var d = this.origPromise(obj)
+    d.origPipe = d.pipe
+    d.pipe = this.pipe
+    return d
+  }
+  return d
+}
+
 // QB specific stuff not part of QBTable
 defQBLibraryGlobal = {}
 function setQBApptoken(token) {
@@ -74,12 +96,12 @@ QBTable.prototype.postQB = function (action, data) {
     contentType: 'application/xml',
     headers: {'QUICKBASE-ACTION': action},
     data: '<qdbapi>' + apptoken + data + '</qdbapi>'
-  }).pipe($.safely(function (res) {
+  }).pipe(function (res) {
     res = $(res)
     if (res.find('errcode').text() != 0)
       throw 'QB Error: ' + res.find('errtext').text()
     return res
-  }))
+  })
 }
 
 QBTable.prototype.resolveColumn = function (col) {
@@ -183,7 +205,7 @@ QBTable.prototype.query = function (query, clist, slist, options) {
   if (_options.length != 0)
     data += '<options>' + _options.join('.') + '</options>'
 
-  return this.postQB('API_DoQuery', data).pipe($.safely(function (res) {
+  return this.postQB('API_DoQuery', data).pipe(function (res) {
     if (singleColumn) {
       return $(res).find('f').map(function () { return $(this).text() }).get()
     } else {
@@ -200,7 +222,7 @@ QBTable.prototype.query = function (query, clist, slist, options) {
         return ret
       }).get()
     }
-  }))
+  })
 }
 
 QBTable.prototype.add = function (objs) { return this.addOrUpdate(objs, true) }
@@ -224,9 +246,9 @@ QBTable.prototype.update = function (param1, param2) {
 
   // form with query
   var self = this
-  return this.query(param1, 3).pipe($.safely(function (rids) {
+  return this.query(param1, 3).pipe(function (rids) {
     return self.update(rids, param2)
-  }))
+  })
 }
 
 QBTable.prototype.addOrUpdate = function (objs, isAdd) {
@@ -354,11 +376,11 @@ QBTable.prototype.makeImportCSV = function (isAdd, rsKey, rows) {
     data += '<clist>' + rsKey + '</clist><msInUTC>1</msInUTC>'
     d = this.postQB('API_ImportFromCSV', data)
     if (isAdd) {
-      d = d.pipe($.safely(function (res) {
+      d = d.pipe(function (res) {
         return $(res).find('rid').map(function (i, r) {
           return {rid: $(r).text(), position: positions[i]}
         }).get()
-      }))
+      })
     }
   }
   return {d: d, nonCSVRows: nonCSVRows}
@@ -377,9 +399,9 @@ QBTable.prototype.makeAddEdit = function (isAdd, row) {
   }
   var d = this.postQB(isAdd ? 'API_AddRecord' : 'API_EditRecord', data)
   if (isAdd) {
-    d = d.pipe($.safely(function (res) {
+    d = d.pipe(function (res) {
       return [{rid: $(res).find('rid').text(), position: row.position}]
-    }))
+    })
   }
   return d
 }
