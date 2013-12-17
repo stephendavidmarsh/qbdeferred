@@ -25,8 +25,9 @@ permissions and limitations under the License.
 You must create a QB table in order to run these tests
 Create these fields, preferably in order
 thebool, a checkbox field
-thetime, a datetime field
+thedate, a datetime field
 thetext, a text field
+theduration, a duration field with Value display set to hours
 
 Put the DBID and FIDs into the call to QBTable below
 Edit the link above to link to qbdeferred.js
@@ -38,8 +39,9 @@ Uncomment the setQBApptoken line and add an apptoken if needed
 var table = new QBTable(
   'DBID_HERE', {
     thebool: 6,
-    thetime: 7,
-    thetext: 8
+    thedate: {fid: 7, inConverter: 'Date'},
+    thetext: 8,
+    theduration: {fid: 9, outConverter: function (x) { return x / 1000 / 3600 }}
   }
 )
 
@@ -110,6 +112,7 @@ function runSetups(setups) {
           $.each(tests, function (i, test) {
             failTest(test[0], "Error in setup: " + err)
           })
+          return (new $.Deferred).resolve()
         }
       )
       return sd
@@ -339,6 +342,21 @@ runSetups([
            })
            .pipe(function (x) {
              assert(x.length == 0)
+           })
+       }
+      ],
+      ["DateTime autoconversion, inConverter, and outConverter",
+       function () {
+         var date = new Date
+         var dur = 3 * 3600 * 1000
+         return table.add([{thetext: 'g', thedate: date, theduration: dur}])
+           .pipe(function () {
+             return table.query({thetext: 'g'}, ['thedate', 'theduration'])
+           })
+           .pipe(function (x) {
+             x = x[0]
+             assert(x.thedate.getTime() == date.getTime())
+             assert(x.theduration == dur)
            })
        }
       ]

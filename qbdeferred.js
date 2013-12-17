@@ -73,6 +73,8 @@ function QBTable(dbid, fields) {
       fid = field
       field = {fid: fid, name: name}
     }
+    if (field.inConverter == 'Date')
+      field.inConverter = function (x) { return new Date(parseInt(x)) }
     _fields[fid] = field
     _fields[name] = field
   }
@@ -131,12 +133,12 @@ QBTable.prototype.makeQuery = function (query) {
       if (typeof cons === 'object') {
         for (comp in cons) {
           if (cons.hasOwnProperty(comp)) {
-            var value = this.prepareQueryValue(cons[comp])
+            var value = this.prepareQueryValue(field, cons[comp])
             ret.push("{" + field + "." + comp.toUpperCase() + ".'" + value + "'}")
           }
         }
       } else {
-        ret.push("{" + field + ".EX.'" + this.prepareQueryValue(cons) + "'}")
+        ret.push("{" + field + ".EX.'" + this.prepareQueryValue(field, cons) + "'}")
       }
     }
     query = ret.join('AND')
@@ -144,8 +146,8 @@ QBTable.prototype.makeQuery = function (query) {
   return this.escapeXML(query)
 }
 
-QBTable.prototype.prepareQueryValue = function (o) {
-  var s = this.prepareValue(o)
+QBTable.prototype.prepareQueryValue = function (field, o) {
+  var s = this.prepareValue(field, o)
   if (s.indexOf('}') != -1)
     throw "Query value containing }"
   if (s == 'OR')
@@ -215,9 +217,13 @@ QBTable.prototype.query = function (query, clist, slist, options) {
           var f = $(this)
           var fid = f.attr('id')
           var value = f.text()
-          ret[fid] = value
-          if (fid in self.fields)
+          if (fid in self.fields) {
+            var inConverter = self.fields[fid].inConverter
+            if (inConverter)
+              value = inConverter(value)
             ret[self.fields[fid].name] = value
+          }
+          ret[fid] = value
         })
         return ret
       }).get()
@@ -315,7 +321,7 @@ QBTable.prototype.makeRowSets = function (objs) {
         var value = obj[key]
         key = self.resolveColumn(key)
         keys.push(key)
-        data[key] = self.prepareValue(value)
+        data[key] = self.prepareValue(key, value)
       }
     }
     var rsKey = keys.sort().join('.')
@@ -328,10 +334,20 @@ QBTable.prototype.makeRowSets = function (objs) {
 
 // Called before a value is sent to QB
 // Converts everything to a string
-QBTable.prototype.prepareValue = function (value) {
+QBTable.prototype.prepareValue = function (field, value) {
+  if (field in this.fields) {
+    var outConverter = this.fields[field].outConverter
+    if (outConverter)
+      value = outConverter(value)
+  }
   if (value instanceof Date)
-    value = value.getTime()
-  return value.toString()
+    return value.getTime().toString()
+  if (typeof value === 'string')
+    return value
+  if (typeof value === 'number' ||
+      typeof value === 'boolean')
+    return value.toString()
+  throw "Bad value to send to QB: " + value
 }
 
 // Turns an object into a single CSV line
