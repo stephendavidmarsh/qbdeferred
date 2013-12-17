@@ -211,9 +211,9 @@ QBTable.prototype.query = function (query, clist, slist, options) {
 
   return this.postQB('API_DoQuery', data).pipe(function (res) {
     if (singleColumn) {
-      return $(res).find('f').map(function () { return $(this).text() }).get()
+      return res.find('f').map(function () { return $(this).text() }).get()
     } else {
-      return $(res).find('record').map(function () {
+      return res.find('record').map(function () {
         var ret = {}
         $(this).find('f').each(function () {
           var f = $(this)
@@ -308,7 +308,7 @@ QBTable.prototype.addOrUpdate = function (objs, isAdd) {
         })
       })
       return wasArray ? rids : rids[0]
-    } else return true
+    }
   })
 }
 
@@ -395,7 +395,7 @@ QBTable.prototype.makeImportCSV = function (isAdd, rsKey, rows) {
     d = this.postQB('API_ImportFromCSV', data)
     if (isAdd) {
       d = d.pipe(function (res) {
-        return $(res).find('rid').map(function (i, r) {
+        return res.find('rid').map(function (i, r) {
           return {rid: $(r).text(), position: positions[i]}
         }).get()
       })
@@ -418,7 +418,7 @@ QBTable.prototype.makeAddEdit = function (isAdd, row) {
   var d = this.postQB(isAdd ? 'API_AddRecord' : 'API_EditRecord', data)
   if (isAdd) {
     d = d.pipe(function (res) {
-      return [{rid: $(res).find('rid').text(), position: row.position}]
+      return [{rid: res.find('rid').text(), position: row.position}]
     })
   }
   return d
