@@ -364,6 +364,47 @@ runSetups([
   },
 
   {
+    setup: function () {
+      var objs = []
+      for (var i = 0; i < 33; i++) {
+        objs.push({thetext: i})
+      }
+      return table.add(objs)
+    },
+    tests: [
+      ["delete with GTE and LTE",
+       function (addRids) {
+         var keep = ['20', '31']
+         var rids = []
+         for (var i = 0; i < 33; i++) {
+           if ($.inArray(i.toString(), keep) == -1) {
+             rids.push(addRids[i])
+           }
+         }
+         return table.delete(rids)
+           .pipe(function () {
+             return table.query('', 'thetext')
+           })
+           .pipe(function (x) {
+             assert(arraysEqual(keep, x))
+           })
+       }
+      ],
+      ["delete with []",
+       function () {
+         return table.delete([])
+           .pipe(function () {
+             return table.query('', 3)
+           })
+           .pipe(function (x) {
+             assert(x.length != 0)
+           })
+       }
+      ]
+    ]
+  },
+
+  {
     tests: [
       ["delete with one rid",
        function () {

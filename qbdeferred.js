@@ -430,17 +430,50 @@ QBTable.prototype.delete = function (param) {
   if (!param)
     throw "delete called without a valid query or rids"
 
+  var self = this
+  function makePurge(query) {
+    var data = '<query>' + query + '</query>'
+    return self.postQB('API_PurgeRecords', data)
+  }
+
   if($.isArray(param)) {
-    if (param == []) {
-      return (new $.Deferred).resolve()
-    }
-    if (param.length == 1)
-      return this.postQB('API_DeleteRecord', '<rid>' + param + '</rid>')
     var atOnce = 10
     var defs = []
-    for (var i = 0; i < param.length; i += atOnce) {
-      var query = "{3.EX.'" + param.slice(i, i + atOnce).join(' OR ') + "'}"
-      defs.push(this.makePurge(query))
+    param = param.sort()
+    var group = []
+    var last = param[0] - 1
+    var leftOvers = []
+
+    function handleGroup() {
+      if (group.length > atOnce) {
+        var query = "{3.GTE.'" + group[0] +
+          "'}AND{3.LTE.'" + group[group.length - 1] + "'}"
+        defs.push(makePurge(query))
+      } else {
+        leftOvers = leftOvers.concat(group)
+      }
+    }
+
+    for (var i = 0; i < param.length; i++) {
+      var rid = parseInt(param[i])
+      if (rid == last + 1)
+        group.push(rid)
+      else {
+        handleGroup()
+        group = [rid]
+      }
+      last = rid
+    }
+    handleGroup()
+
+    for (var i = 0; i < leftOvers.length; i += atOnce) {
+      group = leftOvers.slice(i, i + atOnce)
+      if (group.length == 1) {
+        defs.push(this.postQB('API_DeleteRecord', '<rid>' + group[0] + '</rid>'))
+      } else {
+        var query = "{3.EX.'" + group.join(' OR ') + "'}"
+        defs.push(makePurge(query))
+      }
     }
     return $.when.apply($, defs)
   }
@@ -449,12 +482,7 @@ QBTable.prototype.delete = function (param) {
     return this.delete([param])
 
   // form with query
-  return this.makePurge(this.makeQuery(param))
-}
-
-QBTable.prototype.makePurge = function (query) {
-  var data = '<query>' + query + '</query>'
-  return this.postQB('API_PurgeRecords', data)
+  return makePurge(this.makeQuery(param))
 }
 
 QBTable.prototype.deleteAll = function () {
