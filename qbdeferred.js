@@ -64,19 +64,21 @@ function QBTable(dbid, fields) {
   this.dbid = dbid
   var _fields = {}
   for (name in fields) {
-    var field = fields[name]
-    var fid
-    if (isNaN(field)) {
-      fid = field.fid
-      field.name = name
-    } else {
-      fid = field
-      field = {fid: fid, name: name}
+    if (fields.hasOwnProperty(name)) {
+      var field = fields[name]
+      var fid
+      if (isNaN(field)) {
+        fid = field.fid
+        field.name = name
+      } else {
+        fid = field
+        field = {fid: fid, name: name}
+      }
+      if (field.inConverter == 'Date')
+        field.inConverter = function (x) { return new Date(parseInt(x)) }
+      _fields[fid] = field
+      _fields[name] = field
     }
-    if (field.inConverter == 'Date')
-      field.inConverter = function (x) { return new Date(parseInt(x)) }
-    _fields[fid] = field
-    _fields[name] = field
   }
   this.fields = _fields
 }
