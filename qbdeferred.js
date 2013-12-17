@@ -53,6 +53,12 @@ $.Deferred = function () {
   return d
 }
 
+// This returns a Deferred that is already resolved
+$.rootDef = (function () {
+  var rootDef = $.Deferred().resolve().promise()
+  return function () { return rootDef }
+})()
+
 // QB specific stuff not part of QBTable
 defQBLibraryGlobal = {}
 function setQBApptoken(token) {

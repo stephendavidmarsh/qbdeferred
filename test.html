@@ -51,7 +51,7 @@ function shouldFail(d) {
       throw "Call suceeded when it should have failed"
     },
     function () {
-      return (new $.Deferred).resolve()
+      return $.rootDef()
     }
   )
 }
@@ -79,7 +79,7 @@ function runSetups(setups) {
     console.log("FAIL: " + name + ": " + err)
   }
 
-  var bigD = (new $.Deferred).resolve()
+  var bigD = $.rootDef()
 
   $.each(setups, function (i, setup) {
     var tests = setup.tests
@@ -102,7 +102,7 @@ function runSetups(setups) {
               },
               function (err) {
                 failTest(name, err)
-                return (new $.Deferred).resolve()
+                return $.rootDef()
               }
             )
             return td
@@ -112,7 +112,7 @@ function runSetups(setups) {
           $.each(tests, function (i, test) {
             failTest(test[0], "Error in setup: " + err)
           })
-          return (new $.Deferred).resolve()
+          return $.rootDef()
         }
       )
       return sd
