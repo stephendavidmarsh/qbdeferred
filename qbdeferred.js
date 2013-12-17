@@ -429,13 +429,6 @@ QBTable.prototype.delete = function (param) {
   // out an entire table
   if (!param)
     throw "delete called without a valid query or rids"
-
-  var self = this
-  function makePurge(query) {
-    var data = '<query>' + query + '</query>'
-    return self.postQB('API_PurgeRecords', data)
-  }
-
   if($.isArray(param)) {
     var atOnce = 10
     var defs = []
@@ -444,11 +437,12 @@ QBTable.prototype.delete = function (param) {
     var last = param[0] - 1
     var leftOvers = []
 
+    var self = this
     function handleGroup() {
       if (group.length > atOnce) {
         var query = "{3.GTE.'" + group[0] +
           "'}AND{3.LTE.'" + group[group.length - 1] + "'}"
-        defs.push(makePurge(query))
+        defs.push(self.makePurge(query))
       } else {
         leftOvers = leftOvers.concat(group)
       }
@@ -469,22 +463,47 @@ QBTable.prototype.delete = function (param) {
     for (var i = 0; i < leftOvers.length; i += atOnce) {
       group = leftOvers.slice(i, i + atOnce)
       if (group.length == 1) {
-        defs.push(this.postQB('API_DeleteRecord', '<rid>' + group[0] + '</rid>'))
+        defs.push(
+          this.postQB('API_DeleteRecord', '<rid>' + group[0] + '</rid>')
+            .pipe(function (res) {
+              return 1
+            }, function (err) {
+              if (err == 'QB Error: No such record')
+                return $.Deferred().resolve(0)
+              return err
+            })
+        )
       } else {
         var query = "{3.EX.'" + group.join(' OR ') + "'}"
-        defs.push(makePurge(query))
+        defs.push(this.makePurge(query))
       }
     }
     return $.when.apply($, defs)
+      .pipe(function() {
+        var sum = 0
+        $.each(arguments, function (i, x) {
+          sum += x
+        })
+        return sum
+      })
   }
   // form with one rid not in an array
   if(!isNaN(param))
     return this.delete([param])
 
   // form with query
-  return makePurge(this.makeQuery(param))
+  return this.makePurge(this.makeQuery(param))
 }
 
 QBTable.prototype.deleteAll = function () {
-  return this.postQB('API_PurgeRecords', '')
+  return this.makePurge()
 }
+
+QBTable.prototype.makePurge = function (query) {
+  var data = query ? '<query>' + query + '</query>' : ''
+  return this.postQB('API_PurgeRecords', data)
+    .pipe(function (res) {
+      return parseInt(res.find('num_records_deleted').text())
+    })
+}
+

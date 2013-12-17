@@ -185,6 +185,11 @@ runSetups([
            assert(x.length == 2)
          })
        }
+      ],
+      ["query with nonexistent column should fail",
+       function () {
+         return table.query('', 1000)
+       }, true
       ]
     ]
   },
@@ -382,7 +387,8 @@ runSetups([
            }
          }
          return table.delete(rids)
-           .pipe(function () {
+           .pipe(function (x) {
+             assert(x == 31)
              return table.query('', 'thetext')
            })
            .pipe(function (x) {
@@ -393,7 +399,8 @@ runSetups([
       ["delete with []",
        function () {
          return table.delete([])
-           .pipe(function () {
+           .pipe(function (x) {
+             assert(x == 0)
              return table.query('', 3)
            })
            .pipe(function (x) {
@@ -458,10 +465,13 @@ runSetups([
          return table.delete('')
        }, true
       ],
-      ["delete with 1000000 should fail",
+      ["delete with 1000000",
        function () {
          return table.delete(1000000)
-       }, true
+           .pipe(function (x) {
+             assert(x == 0)
+           })
+       }
       ]
     ]
   },
