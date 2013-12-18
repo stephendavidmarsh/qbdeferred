@@ -127,7 +127,7 @@ qbtable.add(objs)
 
 The `add` method takes an object or an array of objects that represent records to be created. Each key/value in an object is a field and the value to set it to. There is no requirement for each object to have the same set of fields.
 
-If `add` is called with an array, the returned Deferred will be resolved with an array of new RIDs. With a single value, it will be resolved with the sole new RID.
+If `add` is called with an array, the returned Deferred will be resolved with an array of new RIDs. Their order corresponds to the order of the objects in the array passed to `add`. If `add` is called with a single object, it will be resolved with the sole new RID.
 
 **Examples:**
 
