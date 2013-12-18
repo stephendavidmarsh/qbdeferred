@@ -1,7 +1,7 @@
 QB Deferred
 ===========
 
-QB Deferred is a Javascript library that implements an interface to the [Quickbase API](http://www.quickbase.com/api-guide/index.html#intro.html) using jQuery's [Deferred](http://api.jquery.com/category/deferred-object/) objects. It is entirely asynchronous. Most methods return jQuery Promise objects that can be conveniently combined with `pipe`, `when`, `fail`, etc. It implements a higher-level API than what the Quickbase API itself provides. QB Deferred frees you from processing XML and concatenating strings to build Quickbase queries. Instead, QB Deferred lets you use plain old Javascript objects and arrays. Often, a single call to a method of QB Deferred will implement an action that makes several calls to Quickbase.
+QB Deferred is a JavaScript library that implements an interface to the [Quickbase API](http://www.quickbase.com/api-guide/index.html#intro.html) using jQuery's [Deferred](http://api.jquery.com/category/deferred-object/) objects. It is entirely asynchronous. Most methods return jQuery Deferred objects that can be conveniently combined with `pipe`, `when`, `fail`, etc. It implements a higher-level API than what the Quickbase API itself provides. QB Deferred frees you from processing XML and concatenating strings to build Quickbase queries. Instead, QB Deferred lets you use plain old JavaScript objects and arrays. Often, a single call to a method of QB Deferred will implement an action that makes several calls to Quickbase.
 
 Setup
 -----
@@ -19,7 +19,7 @@ QBTable
 new QBTable(dbid, fields)
 ```
 
-All interaction with Quickbase is done through QBTable objects, each of which represents the interface to a single Quickbase table. The constructor takes the DBID, and a object `fields` with key/value pairs for the fields of the table. The keys are names for fields that can be used in method calls on the resulting QBTable instance – whenever you provide a field to QB Deferred, you can use either one of these names or a FID. The value is either the FID or an object with a `fid` property and optional `inConverter` and `outConverter` properties. `inConverter` is used to automatically convert values coming from a Quickbase query, `outConverter` handles values going to Quickbase. As a special case, an `inConverter` of `'Date'` will convert incoming values to Javascript Date objects (No `outConverter` is needed for Dates – QB Deferred handles them automatically). Otherwise, `inConverter` and `outConverter` are functions. 
+All interaction with Quickbase is done through QBTable objects, each of which represents the interface to a single Quickbase table. The constructor takes the DBID, and a object `fields` with key/value pairs for the fields of the table. The keys are names for fields that can be used in method calls on the resulting QBTable instance – whenever you provide a field to QB Deferred, you can use either one of these names or a FID. The value is either the FID or an object with a `fid` property and optional `inConverter` and `outConverter` properties. `inConverter` is used to automatically convert values coming from a Quickbase query, `outConverter` handles values going to Quickbase. As a special case, an `inConverter` of `'Date'` will convert incoming values to JavaScript Date objects (No `outConverter` is needed for Dates – QB Deferred handles them automatically). Otherwise, `inConverter` and `outConverter` are functions.
 
 Note that you can still interact with Quickbase fields that you didn't specify in your fields object using a plain FID.
 
@@ -41,7 +41,7 @@ var qbtable = new QBTable(
 Deferred/Promise Objects
 ----------------
 
-All of QBTable's methods return jQuery Promise objects. In jQuery's lingo, a Promise represent the future result of an operation, and a Deferred represents the requirement to satisfy a promise. Most of Deferred's methods are available through a Promise, and the names are often used interchangeably.
+All of QBTable's methods return jQuery Promise objects. In jQuery's lingo, a Promise represent the future result of an operation, and a Deferred represents the requirement to fulfill a Promise. Most of Deferred's methods are available through a Promise, and the names are often used interchangeably. In this documentation, Deferred is used even when referring to Promise objects.
 
 A Deferred is said to be "resolved" when its operation completes, and it is "resolved" with the result of that operation. If the operation does not complete successfully, it will instead be "rejected" with an error value. Deferred objects can be chained together, with values passing from one operation to the next.
 
