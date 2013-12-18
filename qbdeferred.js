@@ -31,27 +31,37 @@ $.traverse = function (arr, f) {
   return $.when.apply($, $.map(arr, f))
 }
 
-// Hack to make JQuery's Deferred.pipe method handle exceptions correctly
-$.orig_Deferred = $.Deferred
-$.Deferred = function () {
-  var d = $.orig_Deferred.apply($, arguments)
-  d.origPipe = d.pipe
-  d.pipe = function (done, fail, progress) {
-    if (done)
-      done = $.safely(done)
-    if (fail)
-      fail = $.safely(fail)
-    return this.origPipe(done, fail, progress)
+// Hack to make JQuery's deferred.pipe and in 1.8+ deferred.then
+// methods handle exceptions correctly
+$.origDeferred = $.Deferred
+$.Deferred = (function () {
+  var hasOldThen = /1\.(5|6|7)\./.test($.fn.jquery)
+
+  function patch(d) {
+    d.origPipe = hasOldThen ? d.pipe : d.then
+    d.pipe = function (done, fail, progress) {
+      if (done)
+        done = $.safely(done)
+      if (fail)
+        fail = $.safely(fail)
+      return this.origPipe(done, fail, progress)
+    }
+    if (!hasOldThen)
+      d.then = d.pipe
   }
-  d.origPromise = d.promise
-  d.promise = function (obj) {
-    var d = this.origPromise(obj)
-    d.origPipe = d.pipe
-    d.pipe = this.pipe
+
+  return function () {
+    var d = $.origDeferred.apply($, arguments)
+    patch(d)
+    d.origPromise = d.promise
+    d.promise = function (obj) {
+      var p = this.origPromise(obj)
+      patch(p)
+      return p
+    }
     return d
   }
-  return d
-}
+})()
 
 // This returns a Deferred that is already resolved
 $.rootDef = (function () {

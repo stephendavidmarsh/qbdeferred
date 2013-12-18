@@ -225,9 +225,9 @@ parent_table.query('', 3)
 
 This will create a child for every parent, and then a grandchild for every newly created child, then compute the number of created records, and finally inform the user of the number (The example is contrived, the last two steps could be combined). The `pipe` function takes a function that will be passed the resolved result of the Deferred. This function can then either return a new Deferred for the next operation to be piped onto, as the first two `pipe` calls above do passing along the Deferred from an `add` call, or it can return a value for the next operation, as above with `return rids.length * 2`.
 
-QB Deferred includes a monkey-patch to the `pipe` method to make it safe to throw exceptions inside the functions passed to it. Throwing an exception will result in a rejected Deferred.
+Note that the jQuery docs say that `pipe` is deprecated in jQuery 1.8, and that you should use [`deferred.then`](http://api.jquery.com/deferred.then/) instead. However, Quickbase is still using 1.7.2, which has a different `then` method than 1.8+. For the time being, it is best to use `pipe` with QB Deferred.
 
-Note that the jQuery docs say that `pipe` is deprecated in jQuery 1.8, and that you should use [`deferred.then`](http://api.jquery.com/deferred.then/) instead. However, Quickbase is still using 1.7.2, which has a different `then` method than 1.8+. Also, the patch to make `pipe` exception safe is not applied to `then`. For the time being, it is best to use `pipe` with QB Deferred.
+QB Deferred includes a monkey-patch to the `pipe` method and in jQuery 1.8+ the `then` method to make throwing exceptions inside the functions passed to them safe. Throwing an exception will result in a rejected Deferred.
 
 Here is a more complex example:
 
