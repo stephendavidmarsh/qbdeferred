@@ -83,15 +83,29 @@ function QBTable(dbid, fields) {
     if (fields.hasOwnProperty(name)) {
       var field = fields[name]
       var fid
-      if (isNaN(field)) {
-        fid = field.fid
-        field.name = name
-      } else {
+      if (typeof field === 'object') {
+        if ('fid' in field) {
+          fid = field.fid
+          field.name = name
+        } else if ('date' in field) {
+          fid = field.date
+          field = {fid: fid, name: name,
+                   inConverter: function (x) { return new Date(parseInt(x)) }}
+        } else if ('numeric' in field) {
+          fid = field.numeric
+          field = {fid: fid, name: name,
+                   inConverter: function (x) { return parseFloat(x) },
+                   outConverter: function (x) {
+                     if (x != parseFloat(x))
+                       throw "Bad value given for numeric field: " + x
+                     return x
+                   }
+                  }
+        } else throw "Bad field specification"
+      } else if (!isNaN(field)) {
         fid = field
         field = {fid: fid, name: name}
-      }
-      if (field.inConverter == 'Date')
-        field.inConverter = function (x) { return new Date(parseInt(x)) }
+      } else throw "Bad field specification"
       _fields[fid] = field
       _fields[name] = field
     }

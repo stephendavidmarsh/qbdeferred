@@ -19,7 +19,11 @@ QBTable
 new QBTable(dbid, fields)
 ```
 
-All interaction with Quickbase is done through QBTable objects, each of which represents the interface to a single Quickbase table. The constructor takes the DBID, and a object `fields` with key/value pairs for the fields of the table. The keys are names for fields that can be used in method calls on the resulting QBTable instance – whenever you provide a field to QB Deferred, you can use either one of these names or a FID. The value is either the FID or an object with a `fid` property and optional `inConverter` and `outConverter` properties. `inConverter` is used to automatically convert values coming from a Quickbase query, `outConverter` handles values going to Quickbase. As a special case, an `inConverter` of `'Date'` will convert incoming values to JavaScript Date objects (No `outConverter` is needed for Dates – QB Deferred handles them automatically). Otherwise, `inConverter` and `outConverter` are functions.
+All interaction with Quickbase is done through QBTable objects, each of which represents the interface to a single Quickbase table. The constructor takes the DBID and a object with key/value pairs for the fields of the table. The keys are names for the fields that can be used in method calls on the resulting QBTable instance – whenever you provide a field to QB Deferred, you can use either one of these names or a FID. The values give the FID and any conversions that should be applied when communicating with Quickbase. It can be in one of three forms:
+
+- It can be a number, to give a FID and apply no conversions.
+- It can be an object with a single key representing conversions to apply, with the FID as the value. The only keys supported are 'date' and 'numeric', for automatic conversion to and from JavaScript Date objects or Number values. Example: `{date: 7}`.
+- It can be an object with a `fid` property and optional `inConverter` and `outConverter` properties. `inConverter` and `outConverter` are functions. `inConverter` is used to automatically convert values coming from a Quickbase query, `outConverter` handles values going to Quickbase. Example: `{fid: 9, outConverter: function (x) { return x / 1000 / 3600 }}`
 
 Note that you can still interact with Quickbase fields that you didn't specify in your fields object using a plain FID.
 
@@ -29,7 +33,8 @@ Note that you can still interact with Quickbase fields that you didn't specify i
 var qbtable = new QBTable(
   'DBID_HERE', {
     thebool: 6,
-    thedate: {fid: 7, inConverter: 'Date'},
+    thedate: {date: 7},
+    thenumeric: {numeric: 10}
     thetext: 8,
     theduration: {fid: 9, outConverter: function (x) { return x / 1000 / 3600 }}
   }
