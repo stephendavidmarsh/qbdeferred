@@ -215,9 +215,15 @@ runSetups([
       var rows = [
         {thetext: '"xxx'},
         {thetext: 'yyy"'},
-        {thetext: 'zz,zz'},
-        {thetext: 'll,ll"'},
-        {thetext: '"mm,mm'},
+        {thetext: 'aa,aa'},
+        {thetext: 'bb,bb"'},
+        {thetext: '"cc,cc'},
+        {thetext: "dd\ndd"},
+        {thetext: "ee\nee\""},
+        {thetext: "\"ff\nff"},
+        {thetext: "gg\rgg"},
+        {thetext: "hh\rhh\""},
+        {thetext: "\"ii\rii"},
         {thetext: 'nnn'},
         {thetext: 'ooo'},
         {thetext: 'ppp'},
@@ -246,7 +252,7 @@ runSetups([
              var rowsText = $.map(fromSetup.rows, function (r) {
                if (!('thetext' in r))
                  return ''
-               return r.thetext
+               return r.thetext.replace(/\r(\n)?/g, "\n")
              })
              assert(arraysEqual(x, rowsText))
            })

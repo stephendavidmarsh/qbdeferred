@@ -378,7 +378,9 @@ QBTable.prototype.makeCSV = function (cols, obj) {
     var value = obj[key]
     if (value.charAt(0) == '"')
       return false
-    if (value.indexOf(',') != -1) {
+    if (value.indexOf(',') != -1 ||
+        value.indexOf("\n") != -1 ||
+        value.indexOf("\r") != -1) {
       if (value.indexOf('"') != -1)
         return false
       value = '"' + value + '"'
