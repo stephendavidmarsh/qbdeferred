@@ -1,0 +1,50 @@
+<!--
+
+Copyright 2013 Stephen Marsh
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License. You may
+obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+
+-->
+
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+<script src='?a=dbpage&pagename=qbdeferred.js'></script>
+<script type='text/javascript'>
+
+/*
+
+You must create a QB table in order to run these tests
+Create these fields, preferably in order
+thebool, a checkbox field
+thedate, a datetime field
+thetext, a text field
+theduration, a duration field with Value display set to hours
+
+Put the DBID and FIDs into the call to QBTable below
+Edit the link above to link to qbdeferred.js
+Uncomment the setQBApptoken line and add an apptoken if needed
+
+*/
+
+//setQBApptoken(APPTOKEN_HERE)
+var table = new QBTable(
+  'DBID_HERE', {
+    thebool: 6,
+    thedate: {date: 7},
+    thetext: 8,
+    theduration: {fid: 9, outConverter: function (x) { return x / 1000 / 3600 }},
+    thenumeric: {numeric: 10}
+  }
+)
+
+</script>
+<script src='?a=dbpage&pagename=qbdeferred_test.js'></script>

@@ -1,4 +1,4 @@
-<!--
+/*
 
 Copyright 2013 Stephen Marsh
 
@@ -14,37 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 
--->
-
-<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
-<script src='LINK_TO_qbdeferred.js_HERE'></script>
-<script type='text/javascript'>
-
-/*
-
-You must create a QB table in order to run these tests
-Create these fields, preferably in order
-thebool, a checkbox field
-thedate, a datetime field
-thetext, a text field
-theduration, a duration field with Value display set to hours
-
-Put the DBID and FIDs into the call to QBTable below
-Edit the link above to link to qbdeferred.js
-Uncomment the setQBApptoken line and add an apptoken if needed
-
 */
-
-//setQBApptoken(APPTOKEN_HERE)
-var table = new QBTable(
-  'DBID_HERE', {
-    thebool: 6,
-    thedate: {date: 7},
-    thetext: 8,
-    theduration: {fid: 9, outConverter: function (x) { return x / 1000 / 3600 }},
-    thenumeric: {numeric: 10}
-  }
-)
 
 function shouldFail(d) {
   return d.pipe(
@@ -507,5 +477,3 @@ runSetups([
     ]
   }
 ])
-
-</script>
