@@ -263,6 +263,13 @@ QBTable.prototype.query = function (query, clist, slist, options) {
   })
 }
 
+QBTable.prototype.count = function (query) {
+  var data = '<query>' + this.makeQuery(query) + '</query>'
+  return this.postQB('API_DoQueryCount', data).pipe(function (res) {
+    return parseInt(res.find('numMatches').text())
+  })
+}
+
 QBTable.prototype.add = function (objs) { return this.addOrUpdate(objs, true) }
 
 QBTable.prototype.update = function (param1, param2) {

@@ -161,6 +161,13 @@ runSetups([
        function () {
          return table.query('', 1000)
        }, true
+      ],
+      ["count",
+       function () {
+         return table.count({thebool: false}).pipe(function (x) {
+           assert(x == 2)
+         })
+       }
       ]
     ]
   },

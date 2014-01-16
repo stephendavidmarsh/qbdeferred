@@ -122,6 +122,15 @@ qbtable.query('', 3)
 qbtable.query('', [3, 'thetext'])
 ```
 
+Count Method
+------------
+
+```js
+qbtable.count(query)
+```
+
+The `count` method takes a query (see [above](#specifying-a-query)) and returns a Deferred that resolves with the number of records that match that query.
+
 Add Method
 ----------
 
