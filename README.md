@@ -273,6 +273,30 @@ This will create a child for every parent in both `child_table1` and `child_tabl
 
 We store the Deferred representing the result of querying the parent table in `parentQuery`, then pipe both creation operations off of it. We store the Deferred objects representing the result of these two operations into `branch1` and `branch2`. The [`$.when`](http://api.jquery.com/jQuery.when/) function takes any number of Deferred objects, and returns a new Deferred object that resolves with the values of all the passed Deferred objects. Here, we use `$.when` to let us pipe new operations off of the results of both creation operations. The chain ends with a call to [`deferred.fail`](http://api.jquery.com/deferred.fail/). The function passed to `fail` is called only if the Deferred `fail` is called on is rejected. Because of the way `$.when` and `pipe` work, a failure happening anywhere in the chain that precedes `fail` will result in the function being called. In the example, if querying the parent table failed, none of the functions passed to `pipe` would execute, but the one passed to `fail` would still receive the error.
 
+PostQB Method and adding new methods
+------------------------------------
+
+```js
+table.postQB(api_method, xml)
+```
+
+If you need to use a Quickbase API method that QB Deferred doesn't already have a specialized method for, the postQB method will let you create a request to Quickbase for any API method along with XML you provide. The API method should be given as a string, e.g. `'API_DoQuery'`. The XML should also be provided as a string. QB Deferred will automatically include an `<apptoken>` element if needed and wrap the XML in a `<qdbapi>` element. You only need to provide the XML to put inside of the `<qdbapi>`.
+
+QB Deferred will parse the incoming response from QB and check for any errors. If no errors occurred, it will resolve the Deferred with a JQuery object wrapping the XML. You can then use JQuery methods like [`find`](http://api.jquery.com/find/) to extract data from the XML.
+
+You can add new methods to QBTable objects by adding them to the prototype. As an example, here is the definition of the `count` method:
+
+```js
+QBTable.prototype.count = function (query) {
+  var data = '<query>' + this.makeQuery(query) + '</query>'
+  return this.postQB('API_DoQueryCount', data).pipe(function (res) {
+    return parseInt(res.find('numMatches').text())
+  })
+}
+```
+
+`makeQuery` is an internal method, it is used here to create the Quickbase query that we embed in the XML. The Deferred from postQB is piped to a function where the number of matching records is extracted from the response XML. This becomes the value that the Deferred returned by `count` resolves with.
+
 Internals
 ---------
 
