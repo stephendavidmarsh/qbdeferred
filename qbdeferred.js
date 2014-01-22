@@ -16,6 +16,19 @@ permissions and limitations under the License.
 
 */
 
+// Detect if we are in NodeJS
+// If so, require jQuery and all its dependencies
+var isNode = false
+if (typeof module !== 'undefined' && module.exports) {
+  isNode = true
+  var jsdom = require('jsdom').jsdom
+  var window = jsdom('<html><body></body></html>').parentWindow
+  var $ = require('jquery')(window)
+  root.XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
+  $.support.cors = true;
+  root.DOMParser = require('xmldom').DOMParser
+}
+
 // Helper methods put into jQuery object
 $.safely = function (f) {
   return function () {
@@ -69,14 +82,91 @@ $.rootDef = (function () {
   return function () { return rootDef }
 })()
 
-// QB specific stuff not part of QBTable
-defQBLibraryGlobal = {}
+// QBDB
+// QBDB generalizes Quickbase applications and tables
+// It is the superclass of QBApp and QBTable
+function QBDB() {
+}
+
+QBDB.prototype.postQB = function (action, data) {
+  var application = this.application
+  var dbid = this.dbid
+  return application.authDef.pipe(function (ticket) {
+    var ticket = ticket ?
+      '<ticket>' + ticket + '</ticket>' : ''
+    var apptoken = (application.apptoken) ?
+      '<apptoken>' + application.apptoken + '</apptoken>' : ''
+    var url = '/db/' + dbid
+    if (application.domain)
+      url = 'https://' + application.domain + url
+    return $.ajax(url, {
+      type: 'POST',
+      contentType: 'application/xml',
+      headers: {'QUICKBASE-ACTION': action},
+      data: '<qdbapi>' + apptoken + ticket + data + '</qdbapi>'
+    }).pipe(function (res) {
+      res = $(res)
+      var errcode = res.find('errcode').text()
+      if (errcode != 0) {
+        var errtext = res.find('errtext').text()
+        var err = new Error('QB Error: ' + errtext)
+        err.qbErrcode = errcode
+        err.qbErrtext = errtext
+        throw err
+      }
+      return res
+    })
+  })
+}
+
+QBDB.prototype.escapeXML = function(s) {
+  return (
+    s.replace(/&/g, '&amp;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;')
+     .replace(/"/g, '&quot;')
+  )
+}
+
+// QBApp
+function QBApp(dbid, domain, username, password, apptoken, hours) {
+  if (!(this instanceof QBApp))
+    return new QBApp(dbid, domain, username, password, apptoken, hours)
+  this.domain = domain
+  if (!apptoken && defQBLibraryGlobal)
+    apptoken = defQBLibraryGlobal.application.apptoken
+  this.apptoken = apptoken
+  this.application = this
+  this.authDef = $.rootDef()
+  if (username && password) {
+    this.dbid = 'main'
+    var data = '<username>' + username + '</username>'
+    data += '<password>' + password + '</password>'
+    if (hours)
+      data += '<hours>' + hours + '</hours>'
+    this.authDef = this.postQB('API_Authenticate', data)
+      .pipe(function (res) {
+        return res.find('ticket').text()
+      })
+  }
+  this.dbid = dbid
+}
+QBApp.prototype = new QBDB()
+
+QBApp.prototype.qbTable = function (dbid, fields) {
+  return new QBTable(dbid, fields, this)
+}
+
+// Setup for global application
+var defQBLibraryGlobal = {
+  application: new QBApp()
+}
 function setQBApptoken(token) {
-  defQBLibraryGlobal.apptoken = token
+  defQBLibraryGlobal.application.apptoken = token
 }
 
 // QBTable
-function QBTable(dbid, fields) {
+function QBTable(dbid, fields, application) {
   if (!(this instanceof QBTable))
     return new QBTable(dbid, fields)
   this.dbid = dbid
@@ -113,38 +203,11 @@ function QBTable(dbid, fields) {
     }
   }
   this.fields = _fields
+  if (!application)
+    application = defQBLibraryGlobal.application
+  this.application = application
 }
-
-QBTable.prototype.escapeXML = function(s) {
-  return (
-    s.replace(/&/g, '&amp;')
-     .replace(/</g, '&lt;')
-     .replace(/>/g, '&gt;')
-     .replace(/"/g, '&quot;')
-  )
-}
-
-QBTable.prototype.postQB = function (action, data) {
-  var apptoken = ('apptoken' in defQBLibraryGlobal) ?
-    '<apptoken>' + defQBLibraryGlobal.apptoken + '</apptoken>' : ''
-  return $.ajax('/db/' + this.dbid, {
-    type: 'POST',
-    contentType: 'application/xml',
-    headers: {'QUICKBASE-ACTION': action},
-    data: '<qdbapi>' + apptoken + data + '</qdbapi>'
-  }).pipe(function (res) {
-    res = $(res)
-    var errcode = res.find('errcode').text()
-    if (errcode != 0) {
-      var errtext = res.find('errtext').text()
-      var err = new Error('QB Error: ' + errtext)
-      err.qbErrcode = errcode
-      err.qbErrtext = errtext
-      throw err
-    }
-    return res
-  })
-}
+QBTable.prototype = new QBDB()
 
 QBTable.prototype.resolveColumn = function (col) {
   if (isNaN(col)) {
@@ -562,3 +625,12 @@ QBTable.prototype.makePurge = function (query) {
     })
 }
 
+if (isNode) {
+  module.exports = {
+    QBApp: QBApp,
+    $: $
+  }
+  root.QBApp = QBApp
+  if (!root.$)
+    root.$ = $
+}

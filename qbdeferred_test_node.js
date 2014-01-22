@@ -1,4 +1,4 @@
-<!--
+/*
 
 Copyright 2013 Stephen Marsh
 
@@ -14,12 +14,28 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied. See the License for the specific language governing
 permissions and limitations under the License.
 
--->
+*/
 
-<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
-<script src='?a=dbpage&pagename=qbdeferred.js'></script>
-<script src='?a=dbpage&pagename=qbdeferred_test.js'></script>
-<script type='text/javascript'>
+var qbdef = require('./qbdeferred.js')
+var qbdef_test = require('./qbdeferred_test.js')
+
+var password = process.env.QB_PASSWD
+if (!password)
+  throw new Error('You must set QB_PASSWD to an appropriate Quickbase password')
+
+/*
+
+You must provide a QB application in order to run these tests
+
+*/
+
+var app = new QBApp(
+  'DBID_HERE',
+  'QUICKBASE_DOMAIN_HERE',
+  'USERNAME_HERE',
+  password
+  //, 'APPTOKEN_HERE' // Uncomment if needed
+)
 
 /*
 
@@ -30,14 +46,11 @@ thedate, a datetime field
 thetext, a text field
 theduration, a duration field with Value display set to hours
 
-Put the DBID and FIDs into the call to QBTable below
-Edit the link above to link to qbdeferred.js
-Uncomment the setQBApptoken line and add an apptoken if needed
+Put the DBID and FIDs into the call to qbTable below
 
 */
 
-//setQBApptoken(APPTOKEN_HERE)
-var table = new QBTable(
+var table = app.qbTable(
   'DBID_HERE', {
     thebool: 6,
     thedate: {date: 7},
@@ -47,6 +60,4 @@ var table = new QBTable(
   }
 )
 
-runSetups(table)
-
-</script>
+qbdef_test.runSetups(table)
