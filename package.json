@@ -1,0 +1,25 @@
+{
+  "name": "qbdeferred",
+  "version": "0.1.0",
+  "description": "Asynchronous Quickbase API with jQuery's Deferreds",
+  "main": "qbdeferred.js",
+  "dependencies": {
+    "jquery": "~2.1.0-rc1",
+    "jsdom": "~0.8.11",
+    "xmldom": "~0.1.18",
+    "xmlhttprequest": "~1.6.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stephendavidmarsh/qbdeferred.git"
+  },
+  "homepage": "https://github.com/stephendavidmarsh/qbdeferred",
+  "keywords": [
+    "quickbase",
+    "jquery"
+  ],
+  "author": "Stephen Marsh <stephen.david.marsh@gmail.com>",
+  "license": "Apache-2.0",
+  "files": ["qbdeferred.js", "README.md"]
+}
