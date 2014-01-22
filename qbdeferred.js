@@ -97,15 +97,15 @@ function QBTable(dbid, fields) {
                    inConverter: function (x) { return parseFloat(x) },
                    outConverter: function (x) {
                      if (x != parseFloat(x))
-                       throw "Bad value given for numeric field: " + x
+                       throw new Error('Bad value given for numeric field "' + name + '": ' + x)
                      return x
                    }
                   }
-        } else throw "Bad field specification"
+        } else throw new Error('Bad specification for field "' + name + '"')
       } else if (!isNaN(field)) {
         fid = field
         field = {fid: fid, name: name}
-      } else throw "Bad field specification"
+      } else throw new Error('Bad specification for field "' + name + '"')
       _fields[fid] = field
       _fields[name] = field
     }
@@ -132,8 +132,14 @@ QBTable.prototype.postQB = function (action, data) {
     data: '<qdbapi>' + apptoken + data + '</qdbapi>'
   }).pipe(function (res) {
     res = $(res)
-    if (res.find('errcode').text() != 0)
-      throw 'QB Error: ' + res.find('errtext').text()
+    var errcode = res.find('errcode').text()
+    if (errcode != 0) {
+      var errtext = res.find('errtext').text()
+      var err = new Error('QB Error: ' + errtext)
+      err.qbErrcode = errcode
+      err.qbErrtext = errtext
+      throw err
+    }
     return res
   })
 }
@@ -143,7 +149,7 @@ QBTable.prototype.resolveColumn = function (col) {
     if (col in this.fields)
       return this.fields[col].fid
     else
-      throw "Unrecognized field name: " + col
+      throw new Error('Unrecognized field name: ' + col)
   } else {
     return col
   }
@@ -181,9 +187,9 @@ QBTable.prototype.makeQuery = function (query) {
 QBTable.prototype.prepareQueryValue = function (field, o) {
   var s = this.prepareValue(field, o)
   if (s.indexOf('}') != -1)
-    throw "Query value containing }"
+    throw new Error('Query value containing }')
   if (s == 'OR')
-    throw "Query value is OR"
+    throw new Error('Query value is OR')
   return s
 }
 
@@ -196,7 +202,7 @@ QBTable.prototype.query = function (query, clist, slist, options) {
     data += '<query>' + this.makeQuery(query) + '</query>'
 
   if (!clist)
-    throw "query called without a clist"
+    throw new Error('query called without a clist')
   var singleColumn = false
   if ($.isArray(clist)) {
     data += '<clist>' + this.resolveColumns(clist).join('.') + '</clist>'
@@ -217,7 +223,7 @@ QBTable.prototype.query = function (query, clist, slist, options) {
           descPresent = true
           adlist += 'D'
           dotlist.push(self.resolveColumn(col.desc))
-        } else throw "Bad sort list specification"
+        } else throw new Error('Bad sort list specification')
       } else {
         adlist += 'A'
         dotlist.push(self.resolveColumn(col))
@@ -233,7 +239,7 @@ QBTable.prototype.query = function (query, clist, slist, options) {
       var mapping = {limit: 'num', skip: 'skp'}
       if (op in mapping) {
         _options.push(mapping[op] + '-' + options[op])
-      } else throw "Bad option specified: " + op
+      } else throw new Error('Bad option specified: ' + op)
     }
   }
   if (_options.length != 0)
@@ -374,8 +380,11 @@ QBTable.prototype.makeRowSets = function (objs) {
 // Called before a value is sent to QB
 // Converts everything to a string
 QBTable.prototype.prepareValue = function (field, value) {
+  var name = field
   if (field in this.fields) {
-    var outConverter = this.fields[field].outConverter
+    var fieldObj = this.fields[field]
+    name = fieldObj.name
+    var outConverter = fieldObj.outConverter
     if (outConverter)
       value = outConverter(value)
   }
@@ -386,7 +395,7 @@ QBTable.prototype.prepareValue = function (field, value) {
   if (typeof value === 'number' ||
       typeof value === 'boolean')
     return value.toString()
-  throw "Bad value to send to QB: " + value
+  throw new Error('Bad value to send to QB for field "' + name + '": ' + value)
 }
 
 // Turns an object into a single CSV line
@@ -467,7 +476,7 @@ QBTable.prototype.delete = function (param) {
   // this guard is so that an accidental '' or undefined doesn't wipe
   // out an entire table
   if (!param)
-    throw "delete called without a valid query or rids"
+    throw new Error('delete called without a valid query or rids')
   if($.isArray(param)) {
     var atOnce = 10
     var defs = []
@@ -507,7 +516,7 @@ QBTable.prototype.delete = function (param) {
             .pipe(function (res) {
               return 1
             }, function (err) {
-              if (err == 'QB Error: No such record')
+              if (err.qbErrcode == 30)
                 return $.Deferred().resolve(0)
               return err
             })

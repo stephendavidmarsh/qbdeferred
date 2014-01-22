@@ -19,7 +19,7 @@ permissions and limitations under the License.
 function shouldFail(d) {
   return d.pipe(
     function () {
-      throw "Call suceeded when it should have failed"
+      throw new Error("Call suceeded when it should have failed")
     },
     function () {
       return $.rootDef()
@@ -29,7 +29,7 @@ function shouldFail(d) {
 
 function assert(b) {
   if (!b)
-    throw "Assertion failed"
+    throw new Error("Assertion failed")
 }
 
 function arraysEqual(arr1, arr2) {
