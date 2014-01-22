@@ -188,7 +188,7 @@ QBTable.prototype.makeQuery = function (query) {
 
 QBTable.prototype.prepareQueryValue = function (field, o) {
   var s = this.prepareValue(field, o)
-  if (s.indexOf('}') != -1)
+  if (typeof s === 'string' && s.indexOf('}') != -1)
     throw new Error('Query value containing }')
   if (s == 'OR')
     throw new Error('Query value is OR')
@@ -391,12 +391,12 @@ QBTable.prototype.prepareValue = function (field, value) {
       value = outConverter(value)
   }
   if (value instanceof Date)
-    return value.getTime().toString()
-  if (typeof value === 'string')
+    return value.getTime()
+  if (typeof value === 'string' ||
+      typeof value === 'number')
     return value
-  if (typeof value === 'number' ||
-      typeof value === 'boolean')
-    return value.toString()
+  if (typeof value === 'boolean')
+    return value ? 1 : 0
   throw new Error('Bad value to send to QB for field "' + name + '": ' + value)
 }
 
@@ -408,14 +408,16 @@ QBTable.prototype.makeCSV = function (cols, obj) {
   for (var i = 0; i < cols.length; i++) {
     var key = cols[i]
     var value = obj[key]
-    if (value.charAt(0) == '"')
-      return false
-    if (value.indexOf(',') != -1 ||
-        value.indexOf("\n") != -1 ||
-        value.indexOf("\r") != -1) {
-      if (value.indexOf('"') != -1)
+    if (typeof value === 'string') {
+      if (value.charAt(0) == '"')
         return false
-      value = '"' + value + '"'
+      if (value.indexOf(',') != -1 ||
+          value.indexOf("\n") != -1 ||
+          value.indexOf("\r") != -1) {
+        if (value.indexOf('"') != -1)
+          return false
+        value = '"' + value + '"'
+      }
     }
     csv.push(value)
   }
@@ -459,10 +461,13 @@ QBTable.prototype.makeAddEdit = function (isAdd, row) {
   var data = '<msInUTC>1</msInUTC>'
   for (key in obj) {
     if (obj.hasOwnProperty(key)) {
+      var value = obj[key]
+      if (typeof value === 'string')
+        value = this.escapeXML(value)
       if (key == 3 && !isAdd)
-        data += '<rid>' + obj[key] + '</rid>'
+        data += '<rid>' + value + '</rid>'
       else
-        data += '<field fid="' + key + '">' + this.escapeXML(obj[key]) + '</field>'
+        data += '<field fid="' + key + '">' + value + '</field>'
     }
   }
   var d = this.postQB(isAdd ? 'API_AddRecord' : 'API_EditRecord', data)
