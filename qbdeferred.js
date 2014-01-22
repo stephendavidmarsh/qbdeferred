@@ -77,6 +77,8 @@ function setQBApptoken(token) {
 
 // QBTable
 function QBTable(dbid, fields) {
+  if (!(this instanceof QBTable))
+    return new QBTable(dbid, fields)
   this.dbid = dbid
   var _fields = {}
   for (name in fields) {
