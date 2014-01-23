@@ -110,16 +110,21 @@ function QBDomain(domainName, username, password, hours) {
 
     var self = this
     function authenticate() {
-      self.authDef = self._postQB('API_Authenticate', data)
+      return self._postQB('API_Authenticate', data)
         .pipe(function (res) {
           return res.find('ticket').text()
         })
     }
 
-    authenticate()
+    this.authDef = authenticate()
     var goodFor = (hours ? hours : 12) * 3600 * 1000
     goodFor -= 5 * 60 * 1000 // Safety factor of five minutes
-    var timer = setInterval(authenticate, goodFor)
+    var timer = setInterval(function () {
+      var newAuthDef = authenticate()
+      newAuthDef.always(function () {
+        self.authDef = newAuthDef
+      })
+    }, goodFor)
     if (isNode)
       timer.unref()
   } else this.authDef = $.rootDef()
