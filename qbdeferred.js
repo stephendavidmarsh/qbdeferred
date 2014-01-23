@@ -84,42 +84,11 @@ $.rootDef = (function () {
 
 // QBDB
 // QBDB generalizes Quickbase applications and tables
-// It is the superclass of QBApp and QBTable
+// It is the superclass of QBDomain, QBApp, and QBTable
 function QBDB() {
 }
 
-QBDB.prototype.postQB = function (action, data) {
-  var application = this.application
-  var dbid = this.dbid
-  return application.authDef.pipe(function (ticket) {
-    var ticket = ticket ?
-      '<ticket>' + ticket + '</ticket>' : ''
-    var apptoken = (application.apptoken) ?
-      '<apptoken>' + application.apptoken + '</apptoken>' : ''
-    var url = '/db/' + dbid
-    if (application.domain)
-      url = 'https://' + application.domain + url
-    return $.ajax(url, {
-      type: 'POST',
-      contentType: 'application/xml',
-      headers: {'QUICKBASE-ACTION': action},
-      data: '<qdbapi>' + apptoken + ticket + data + '</qdbapi>'
-    }).pipe(function (res) {
-      res = $(res)
-      var errcode = res.find('errcode').text()
-      if (errcode != 0) {
-        var errtext = res.find('errtext').text()
-        var err = new Error('QB Error: ' + errtext)
-        err.qbErrcode = errcode
-        err.qbErrtext = errtext
-        throw err
-      }
-      return res
-    })
-  })
-}
-
-QBDB.prototype.escapeXML = function(s) {
+QBDB.prototype.escapeXML = function (s) {
   return (
     s.replace(/&/g, '&amp;')
      .replace(/</g, '&lt;')
@@ -128,39 +97,104 @@ QBDB.prototype.escapeXML = function(s) {
   )
 }
 
-// QBApp
-function QBApp(dbid, domain, username, password, apptoken, hours) {
-  if (!(this instanceof QBApp))
-    return new QBApp(dbid, domain, username, password, apptoken, hours)
-  this.domain = domain
-  if (!apptoken && defQBLibraryGlobal)
-    apptoken = defQBLibraryGlobal.application.apptoken
-  this.apptoken = apptoken
-  this.application = this
-  this.authDef = $.rootDef()
+// QBDomain
+function QBDomain(domainName, username, password, hours) {
+  if (!(this instanceof QBDomain))
+    return new QBDomain(domain, username, password, hours)
+  this.domainName = domainName
   if (username && password) {
-    this.dbid = 'main'
     var data = '<username>' + username + '</username>'
     data += '<password>' + password + '</password>'
     if (hours)
       data += '<hours>' + hours + '</hours>'
-    this.authDef = this.postQB('API_Authenticate', data)
-      .pipe(function (res) {
-        return res.find('ticket').text()
-      })
-  }
+
+    var self = this
+    function authenticate() {
+      self.authDef = self._postQB('API_Authenticate', data)
+        .pipe(function (res) {
+          return res.find('ticket').text()
+        })
+    }
+
+    authenticate()
+    var goodFor = (hours ? hours : 12) * 3600 * 1000
+    goodFor -= 5 * 60 * 1000 // Safety factor of five minutes
+    var timer = setInterval(authenticate, goodFor)
+    if (isNode)
+      timer.unref()
+  } else this.authDef = $.rootDef()
+}
+QBDomain.prototype = new QBDB()
+
+QBDomain.prototype._postQB = function (action, data, dbid) {
+  if (!dbid)
+      dbid = 'main'
+  var url = '/db/' + dbid
+  if (this.domainName)
+    url = 'https://' + this.domainName + url
+  return $.ajax(url, {
+    type: 'POST',
+    contentType: 'application/xml',
+    headers: {'QUICKBASE-ACTION': action},
+    data: '<qdbapi>' + data + '</qdbapi>'
+  }).pipe(function (res) {
+    res = $(res)
+    var errcode = res.find('errcode').text()
+    if (errcode != 0) {
+      var errtext = res.find('errtext').text()
+      var err = new Error('QB Error: ' + errtext)
+      err.qbErrcode = errcode
+      err.qbErrtext = errtext
+      throw err
+    }
+    return res
+  })
+}
+
+QBDomain.prototype.postQB = function (action, data, dbid) {
+  var self = this
+  return this.authDef.pipe(function (ticket) {
+    if (ticket)
+      data = '<ticket>' + ticket + '</ticket>' + data
+    return self._postQB(action, data, dbid)
+  })
+}
+
+QBDomain.prototype.qbApp = function (dbid, apptoken) {
+  return new QBApp(dbid, apptoken, this)
+}
+
+// QBApp
+function QBApp(dbid, apptoken, domain) {
+  if (!(this instanceof QBApp))
+    return new QBApp(dbid, apptoken, domain)
+  if (!domain)
+    domain = defQBLibraryGlobal.domain
+  this.domain = domain
+  if (!apptoken && defQBLibraryGlobal.application)
+    apptoken = defQBLibraryGlobal.application.apptoken
+  this.apptoken = apptoken
   this.dbid = dbid
 }
 QBApp.prototype = new QBDB()
+
+QBApp.prototype.postQB = function (action, data, dbid) {
+  if (!dbid)
+    dbid = this.dbid
+  if (this.apptoken)
+      data = '<apptoken>' + apptoken + '</apptoken>' + data
+  return this.domain.postQB(action, data, dbid)
+}
 
 QBApp.prototype.qbTable = function (dbid, fields) {
   return new QBTable(dbid, fields, this)
 }
 
-// Setup for global application
+// Setup for global domain and application
 var defQBLibraryGlobal = {
-  application: new QBApp()
+  domain: new QBDomain()
 }
+defQBLibraryGlobal.application = new QBApp()
 function setQBApptoken(token) {
   defQBLibraryGlobal.application.apptoken = token
 }
@@ -206,8 +240,13 @@ function QBTable(dbid, fields, application) {
   if (!application)
     application = defQBLibraryGlobal.application
   this.application = application
+  this.domain = application.domain
 }
 QBTable.prototype = new QBDB()
+
+QBTable.prototype.postQB = function (action, data) {
+  return this.application.postQB(action, data, this.dbid)
+}
 
 QBTable.prototype.resolveColumn = function (col) {
   if (isNaN(col)) {
@@ -627,10 +666,10 @@ QBTable.prototype.makePurge = function (query) {
 
 if (isNode) {
   module.exports = {
-    QBApp: QBApp,
+    QBDomain: QBDomain,
     $: $
   }
-  root.QBApp = QBApp
+  root.QBDomain = QBDomain
   if (!root.$)
     root.$ = $
 }

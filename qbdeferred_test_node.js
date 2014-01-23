@@ -29,11 +29,14 @@ You must provide a QB application in order to run these tests
 
 */
 
-var app = new QBApp(
-  'DBID_HERE',
+var domain = new QBDomain(
   'QUICKBASE_DOMAIN_HERE',
   'USERNAME_HERE',
   password
+)
+
+var app = domain.qbApp(
+  'DBID_HERE'
   //, 'APPTOKEN_HERE' // Uncomment if needed
 )
 
