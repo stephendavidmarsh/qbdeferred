@@ -22,8 +22,8 @@ var qbDefIsNode = false
 if (typeof module !== 'undefined' && module.exports) {
   qbDefIsNode = true
   var jsdom = require('jsdom').jsdom
-  var window = jsdom('<html><body></body></html>').parentWindow
-  var $ = require('jquery')(window)
+  var fakeWindow = jsdom('<html><body></body></html>').parentWindow
+  var $ = require('jquery')(fakeWindow)
   root.XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest
   $.support.cors = true;
   root.DOMParser = require('xmldom').DOMParser
