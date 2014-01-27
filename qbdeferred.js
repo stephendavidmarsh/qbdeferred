@@ -18,9 +18,9 @@ permissions and limitations under the License.
 
 // Detect if we are in NodeJS
 // If so, require jQuery and all its dependencies
-var isNode = false
+var qbDefIsNode = false
 if (typeof module !== 'undefined' && module.exports) {
-  isNode = true
+  qbDefIsNode = true
   var jsdom = require('jsdom').jsdom
   var window = jsdom('<html><body></body></html>').parentWindow
   var $ = require('jquery')(window)
@@ -125,7 +125,7 @@ function QBDomain(domainName, username, password, hours) {
         self.authDef = newAuthDef
       })
     }, goodFor)
-    if (isNode)
+    if (qbDefIsNode)
       timer.unref()
   } else this.authDef = $.rootDef()
 }
@@ -669,7 +669,7 @@ QBTable.prototype.makePurge = function (query) {
     })
 }
 
-if (isNode) {
+if (qbDefIsNode) {
   module.exports = {
     QBDomain: QBDomain,
     $: $
