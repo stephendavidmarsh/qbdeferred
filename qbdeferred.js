@@ -187,7 +187,7 @@ QBApp.prototype.postQB = function (action, data, dbid) {
   if (!dbid)
     dbid = this.dbid
   if (this.apptoken)
-      data = '<apptoken>' + apptoken + '</apptoken>' + data
+      data = '<apptoken>' + this.apptoken + '</apptoken>' + data
   return this.domain.postQB(action, data, dbid)
 }
 
