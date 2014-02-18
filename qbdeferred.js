@@ -300,7 +300,7 @@ QBTable.prototype.prepareQueryValue = function (field, o) {
 QBTable.prototype.query = function (query, clist, slist, options) {
   var self = this
   var _options = []
-  var data = '<fmt>structured</fmt>'
+  var data = '<fmt>structured</fmt><returnpercentage>1</returnpercentage>'
 
   if (query)
     data += '<query>' + this.makeQuery(query) + '</query>'
