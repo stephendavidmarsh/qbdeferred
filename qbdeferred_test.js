@@ -351,12 +351,7 @@ function getSetups(table) {
                assert(x.thenumeric === 123)
              })
          }
-        ],
-        ["numeric field type without number should fail",
-         function () {
-           return table.add([{thetext: 'h', thenumeric: 'abc'}])
-         }, true
-        ],
+        ]
       ]
     },
 

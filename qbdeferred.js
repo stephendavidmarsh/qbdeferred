@@ -225,12 +225,7 @@ function QBTable(dbid, fields, application) {
         } else if ('numeric' in field) {
           fid = field.numeric
           field = {fid: fid, name: name,
-                   inConverter: function (x) { return parseFloat(x) },
-                   outConverter: function (x) {
-                     if (x != parseFloat(x))
-                       throw new Error('Bad value given for numeric field "' + name + '": ' + x)
-                     return x
-                   }
+                   inConverter: function (x) { return parseFloat(x) }
                   }
         } else throw new Error('Bad specification for field "' + name + '"')
       } else if (!isNaN(field)) {
