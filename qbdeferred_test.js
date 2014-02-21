@@ -213,6 +213,7 @@ function getSetups(table) {
           {thetext: 'nnn'},
           {thetext: 'ooo'},
           {thetext: 'ppp'},
+          {thetext: 'zz]]>zz<zz'},
           {thetext: 'qqq', thebool: true},
           {thetext: 'rrr', thebool: false},
           {thebool: true}

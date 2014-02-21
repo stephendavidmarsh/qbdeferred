@@ -549,7 +549,8 @@ QBTable.prototype.makeImportCSV = function (isAdd, rsKey, rows) {
   })
   var d = false
   if (csv) {
-    var data = "<records_csv>\n<![CDATA[\n" + csv + "]]>\n</records_csv>"
+    csv = csv.replace(/\]\]>/g, ']]>]]&gt;<![CDATA[')
+    var data = "<records_csv><![CDATA[" + csv + "]]></records_csv>"
     data += '<clist>' + rsKey + '</clist><msInUTC>1</msInUTC>'
     d = this.postQB('API_ImportFromCSV', data)
     if (isAdd) {
