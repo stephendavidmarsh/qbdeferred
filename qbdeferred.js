@@ -42,6 +42,9 @@ $.safely = function (f) {
 
 $.traverse = function (arr, f) {
   return $.when.apply($, $.map(arr, f))
+    .pipe(function () {
+      return arguments
+    })
 }
 
 // Hack to make JQuery's deferred.pipe and in 1.8+ deferred.then
