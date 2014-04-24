@@ -196,6 +196,35 @@ QBApp.prototype.postQB = function (action, data, dbid) {
   return this.domain.postQB(action, data, dbid)
 }
 
+QBApp.prototype.dbidFor = function (alias) {
+  var self = this
+  if (!this.alias2DBIDMap) {
+    function makeMap(dbid) {
+      return self.postQB('API_GetSchema', '', dbid)
+        .pipe(function (res) {
+          var appDBID = res.find('app_id').text()
+          if (appDBID != dbid)
+            return makeMap(appDBID)
+          var map = {}
+          res.find('chdbid').each(function (i, r) {
+            r = $(r)
+            map[r.attr('name')] = r.text()
+          })
+          return map
+        })
+    }
+    this.alias2DBIDMap = makeMap(
+      this.dbid ? this.dbid : /\/db\/([^?]+)/.exec(window.location.href)[1]
+    )
+  }
+  return this.alias2DBIDMap.pipe(function (map) {
+    var dbid = map[alias]
+    if (!dbid)
+      throw new Error("Alias " + alias + " not found in application schema")
+    return dbid
+  })
+}
+
 QBApp.prototype.qbTable = function (dbid, fields) {
   return new QBTable(dbid, fields, this)
 }
@@ -213,7 +242,6 @@ function setQBApptoken(token) {
 function QBTable(dbid, fields, application) {
   if (!(this instanceof QBTable))
     return new QBTable(dbid, fields)
-  this.dbid = dbid
   var _fields = {}
   for (name in fields) {
     if (fields.hasOwnProperty(name)) {
@@ -244,13 +272,18 @@ function QBTable(dbid, fields, application) {
   this.fields = _fields
   if (!application)
     application = defQBLibraryGlobal.application
+  this.dbid = (dbid.toLowerCase().lastIndexOf('_dbid_', 0) == 0)
+    ? application.dbidFor(dbid.toLowerCase()) : $.Deferred().resolve(dbid)
   this.application = application
   this.domain = application.domain
 }
 QBTable.prototype = new QBDB()
 
 QBTable.prototype.postQB = function (action, data) {
-  return this.application.postQB(action, data, this.dbid)
+  var self = this
+  return this.dbid.pipe(function (dbid) {
+    return self.application.postQB(action, data, dbid)
+  })
 }
 
 QBTable.prototype.resolveColumn = function (col) {
