@@ -275,7 +275,7 @@ QBTable.prototype.makeQuery = function (query) {
     for (field in query) {
       var cons = query[field]
       field = this.resolveColumn(field)
-      if (typeof cons === 'object') {
+      if (typeof cons === 'object' && !(cons instanceof Date)) {
         for (comp in cons) {
           if (cons.hasOwnProperty(comp)) {
             var value = this.prepareQueryValue(field, cons[comp])
