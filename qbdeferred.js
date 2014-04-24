@@ -150,9 +150,11 @@ QBDomain.prototype._postQB = function (action, data, dbid) {
     var errcode = res.find('errcode').text()
     if (errcode != 0) {
       var errtext = res.find('errtext').text()
+      var errdetail = res.find('errdetail').text()
       var err = new Error('QB Error: ' + errtext)
       err.qbErrcode = errcode
       err.qbErrtext = errtext
+      err.qbErrdetail = errdetail
       throw err
     }
     return res
