@@ -349,8 +349,8 @@ QBTable.prototype.query = function (query, clist, slist, options) {
   if ($.isArray(clist)) {
     data += '<clist>' + this.resolveColumns(clist).join('.') + '</clist>'
   } else {
-    singleColumn = true
-    data += '<clist>' + this.resolveColumn(clist) + '</clist>'
+    singleColumn = this.resolveColumn(clist)
+    data += '<clist>' + singleColumn + '</clist>'
   }
 
   if (slist) {
@@ -389,7 +389,14 @@ QBTable.prototype.query = function (query, clist, slist, options) {
 
   return this.postQB('API_DoQuery', data).pipe(function (res) {
     if (singleColumn) {
-      return res.find('f').map(function () { return $(this).text() }).get()
+      if (singleColumn in self.fields)
+        var inConverter = self.fields[singleColumn].inConverter
+      return res.find('f').map(function () {
+        var value = $(this).text()
+        if (inConverter)
+          value = inConverter(value)
+        return value
+      }).get()
     } else {
       return res.find('record').map(function () {
         var ret = {}

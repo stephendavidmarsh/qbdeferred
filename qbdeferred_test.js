@@ -358,6 +358,17 @@ function getSetups(table) {
                assert(x.thenumeric === 123)
              })
          }
+        ],
+        ["Conversion with single column",
+         function () {
+           return table.add([{thetext: 'h', thenumeric: 123}])
+             .pipe(function () {
+               return table.query({thetext: 'h'}, 'thenumeric')
+             })
+             .pipe(function (x) {
+               assert(x[0] === 123)
+             })
+         }
         ]
       ]
     },
