@@ -225,6 +225,27 @@ QBApp.prototype.dbidFor = function (alias) {
   })
 }
 
+QBApp.prototype.getPage = function (pagenameOrID) {
+  var data = isNaN(pagenameOrID)
+    ? '<pagename>' + pagenameOrID + '</pagename>'
+    : '<pageID>' + pagenameOrID + '</pageID>'
+  return this.postQB('API_GetDBPage', data)
+    .pipe(function (res) {
+      return res.find('pagebody').text()
+    })
+}
+
+QBApp.prototype.setPage = function (pagenameOrID, pagebody) {
+  var data = isNaN(pagenameOrID)
+    ? '<pagename>' + pagenameOrID + '</pagename>'
+    : '<pageid>' + pagenameOrID + '</pageid>'
+  data += '<pagetype>1</pagetype><pagebody>' + this.escapeXML(pagebody) + '</pagebody>'
+  return this.postQB('API_AddReplaceDBPage', data)
+    .pipe(function (res) {
+      return res.find('pageID').text()
+    })
+}
+
 QBApp.prototype.qbTable = function (dbid, fields) {
   return new QBTable(dbid, fields, this)
 }

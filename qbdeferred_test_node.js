@@ -63,4 +63,4 @@ var table = app.qbTable(
   }
 )
 
-qbdef_test.runSetups(table)
+qbdef_test.runSetups(table, app)

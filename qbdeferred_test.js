@@ -36,8 +36,8 @@ function arraysEqual(arr1, arr2) {
   return $(arr1).not(arr2).length == 0 && $(arr2).not(arr1).length == 0
 }
 
-function runSetups(table) {
-  var setups = getSetups(table)
+function runSetups(table, app) {
+  var setups = getSetups(table, app)
   var successCount = 0
   var failCount = 0
 
@@ -102,7 +102,7 @@ function runSetups(table) {
   })
 }
 
-function getSetups(table) {
+function getSetups(table, app) {
   return [
     // Query tests
     {
@@ -176,17 +176,39 @@ function getSetups(table) {
 
     {
       tests: [
-        "add with one record and XML escaping",
-        function () {
-          var row = {thebool: true, thetext: 'a&b<c>d"e\'f'}
-          return table.add(row)
-            .pipe(function () {
-              return table.query('', ['thebool', 'thetext'])
-            })
-            .pipe(function (x) {
-              assert(x[0].thetext, row.thetext)
-            })
-        }
+        ["add with one record and XML escaping",
+         function () {
+           var row = {thebool: true, thetext: 'a&b<c>d"e\'f'}
+           return table.add(row)
+             .pipe(function () {
+               return table.query('', ['thebool', 'thetext'])
+             })
+             .pipe(function (x) {
+               assert(x[0].thetext, row.thetext)
+             })
+         }
+        ],
+        ["getPage and setPage",
+         function () {
+           var str1 = '123abc'
+           var str2 = ' \t a&b<c>d"e\'fXYZ\n\n'
+           var pagename = 'qbdeftest.txt'
+           return app.setPage(pagename, str1)
+             .pipe(function (pageID) {
+               app.getPage(pageID)
+                 .pipe(function (x) {
+                   assert(x, str1)
+                   return app.setPage(pageID, str2)
+                 })
+                 .pipe(function () {
+                   return app.getPage(pagename)
+                 })
+                 .pipe(function (x) {
+                   assert(x, str2)
+                 })
+             })
+         }
+        ]
       ]
     },
 
