@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+
+/*
+
+Copyright 2013 Stephen Marsh
+
+Licensed under the Apache License, Version 2.0 (the "License"); you
+may not use this file except in compliance with the License. You may
+obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing
+permissions and limitations under the License.
+
+*/
+
+var qbdef = require('./qbdeferred.js')
+var fs = require('fs')
+
+var exitCode = 0
+
+function reportError(err) {
+  console.log("Error: " + err)
+  exitCode = 1
+}
+
+function reportBadError(err) {
+  reportError(err)
+  process.exit(1)
+}
+
+if (process.argv.length < 3) {
+  console.log("qbpage [-s] [-p password] file1...")
+  console.log("\tProvide -s to set pages instead of getting")
+  console.log("\tProvide -p to set password or set QB_PASSWD environment variable")
+  console.log("\tAny number of filenames may be provided")
+  process.exit(0)
+}
+
+var password = process.env.QB_PASSWD
+var isset = false
+var files = []
+for (var i = 2; i < process.argv.length; i++) {
+  var arg = process.argv[i]
+  if (arg == '-p') {
+    i++
+    password = process.argv[i]
+  } else if (arg == '-s') {
+    isset = true
+  } else {
+    files.push(arg)
+  }
+}
+if (!password)
+  reportBadError('You must set QB_PASSWD or provide -p with an appropriate Quickbase password')
+if (!files.length)
+  reportBadError('You must specify at least one file')
+
+function readFile(filename, callback) {
+  fs.readFile(filename, 'utf8', function (err, data) {
+    if (err)
+      reportBadError("Can't read file " + filename + ': ' + err)
+    callback(data)
+  })
+}
+
+readFile('.qbpage', function (data) {
+  var config = JSON.parse(data);
+  var domain = new QBDomain(
+    config.domain,
+    config.username,
+    password
+  )
+  var app = domain.qbApp(
+    config.appdbid,
+    config.apptoken
+  )
+  files.forEach(function (file) {
+    if (isset) {
+      setQBFile(file)
+    } else {
+      readQBFile(file)
+    }
+  })
+  
+  function setQBFile(file) {
+    readFile(file, function (data) {
+      app.setPage(file, data)
+        .fail(function (err) {
+          reportError(err)
+        })
+    })
+  }
+
+  function readQBFile(file) {
+    app.getPage(file)
+      .pipe(function (data) {
+        fs.writeFile(file, data, function (err) {
+          if (err)
+            reportError(err)
+        })
+      })
+      .fail(function (err) {
+        reportError(err)
+      })
+  }
+});
+
+process.on('exit', function() {
+  process.exit(exitCode)
+});
