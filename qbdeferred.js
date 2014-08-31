@@ -556,15 +556,14 @@ QBTable.prototype.makeCSV = function (cols, obj) {
     var key = cols[i]
     var value = obj[key]
     if (typeof value === 'string') {
-      if (value.charAt(0) == '"' ||
-          /^\s/.test(value) ||
+      if (/^\s/.test(value) ||
           /\s$/.test(value))
         return false
-      if (value.indexOf(',') != -1 ||
+      if (value.charAt(0) == '"' ||
+          value.indexOf(',') != -1 ||
           value.indexOf("\n") != -1 ||
           value.indexOf("\r") != -1) {
-        if (value.indexOf('"') != -1)
-          return false
+        value = value.replace(/"/g, '""')
         value = '"' + value + '"'
       }
     }

@@ -194,7 +194,12 @@ function getSetups(table) {
       setup: function () {
         var rows = [
           {thetext: '"xxx'},
+          {thetext: '""xyx'},
+          {thetext: '"""xzx'},
           {thetext: 'yyy"'},
+          {thetext: 'ww"ww'},
+          {thetext: 'ww""ww'},
+          {thetext: 'ww"""ww'},
           {thetext: 'aa,aa'},
           {thetext: 'bb,bb"'},
           {thetext: '"cc,cc'},
