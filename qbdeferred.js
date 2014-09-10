@@ -231,7 +231,11 @@ QBApp.prototype.getPage = function (pagenameOrID) {
     : '<pageID>' + pagenameOrID + '</pageID>'
   return this.postQB('API_GetDBPage', data)
     .pipe(function (res) {
-      return res.find('pagebody').text()
+      var text = res.find('pagebody').text()
+      // Sometimes, QB inserts cruft
+      if (text.indexOf('\n') > -1)
+        text = text.slice(2, -3)
+      return text
     })
 }
 

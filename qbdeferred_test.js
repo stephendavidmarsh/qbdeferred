@@ -184,7 +184,7 @@ function getSetups(table, app) {
                return table.query('', ['thebool', 'thetext'])
              })
              .pipe(function (x) {
-               assert(x[0].thetext, row.thetext)
+               assert(x[0].thetext == row.thetext)
              })
          }
         ],
@@ -195,16 +195,16 @@ function getSetups(table, app) {
            var pagename = 'qbdeftest.txt'
            return app.setPage(pagename, str1)
              .pipe(function (pageID) {
-               app.getPage(pageID)
+               return app.getPage(pageID)
                  .pipe(function (x) {
-                   assert(x, str1)
+                   assert(x == str1)
                    return app.setPage(pageID, str2)
                  })
                  .pipe(function () {
                    return app.getPage(pagename)
                  })
                  .pipe(function (x) {
-                   assert(x, str2)
+                   assert(x == str2)
                  })
              })
          }
