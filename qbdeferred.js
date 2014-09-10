@@ -280,6 +280,24 @@ function QBTable(dbid, fields, application) {
           fid = field.date
           field = {fid: fid, name: name,
                    inConverter: function (x) { return new Date(parseInt(x)) }}
+        } else if ('dateCorrectTimezone' in field) {
+          fid = field.dateCorrectTimezone
+          field = {fid: fid, name: name,
+                   inConverter: function (x) {
+                     var date = new Date(parseInt(x))
+                     return (new Date(date.getUTCFullYear(),
+                                      date.getUTCMonth(),
+                                      date.getUTCDate()))
+                   },
+                   outConverter: function (x) {
+                     var x = x instanceof Date ? x
+                       : (isNaN(x) ? new Date(x) : new Date(parseInt(x)))
+                     return (new Date(
+                       x.getFullYear() + "-" +
+                         ("0" + (1 + x.getMonth())).slice(-2) + "-" +
+                         ("0" + x.getDate()).slice(-2) +
+                         "T00:00Z")).getTime()
+                   }}
         } else if ('numeric' in field) {
           fid = field.numeric
           field = {fid: fid, name: name,

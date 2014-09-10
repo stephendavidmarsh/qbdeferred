@@ -59,7 +59,8 @@ var table = app.qbTable(
     thedate: {date: 7},
     thetext: 8,
     theduration: {fid: 9, outConverter: function (x) { return x / 1000 / 3600 }},
-    thenumeric: {numeric: 10}
+    thenumeric: {numeric: 10},
+    thedatecorrected: {dateCorrectTimezone: 11}
   }
 )
 

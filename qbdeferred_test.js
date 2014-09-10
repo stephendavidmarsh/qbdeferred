@@ -396,6 +396,29 @@ function getSetups(table, app) {
                assert(x[0] === 123)
              })
          }
+        ],
+        ["dateCorrectTimezone",
+         function () {
+           var dates = [
+             new Date("2014-11-02T00:00-04:00"), // DST ends two hours later
+             new Date("2014-03-09T00:00-05:00"), // DST began two hours later
+             new Date("2014-04-01T00:00-04:00"), // DST in effect
+             new Date("2014-11-15T00:00-05:00")  // DST not in effect
+           ]
+           return table.add($.map(dates, function (date) {
+             return {thetext: 'i', thedatecorrected: date}
+           }))
+             .pipe(function () {
+               return table.query({thetext: 'i'}, 'thedatecorrected', 3)
+             })
+             .pipe(function (datesFromQB) {
+               $.each(dates, function (i, date) {
+                 var dateFromQB = datesFromQB[i]
+                 assert(date.getHours() == 0)
+                 assert(date.getTime() == dateFromQB.getTime())
+               })
+             })
+         }
         ]
       ]
     },
