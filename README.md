@@ -21,9 +21,13 @@ new QBTable(dbid, fields)
 
 All interaction with Quickbase is done through QBTable objects, each of which represents the interface to a single Quickbase table. The constructor takes the DBID and a object with key/value pairs for the fields of the table. The keys are names for the fields that can be used in method calls on the resulting QBTable instance – whenever you provide a field to QB Deferred, you can use either one of these names or a FID. The values give the FID and any conversions that should be applied when communicating with Quickbase. It can be in one of three forms:
 
-- It can be a number, to give a FID and apply no conversions.
-- It can be an object with a single key representing conversions to apply, with the FID as the value. The keys 'date' and 'numeric' are for converting incoming values to JavaScript Date objects or Number values. 'dateCorrectTimezone' is meant to solve issues with timezones and Date fields. It will convert outgoing dates to UTC and incoming values back to the local timezone, always rounding to midnight. Example: `{date: 7}`.
-- It can be an object with a `fid` property and optional `inConverter` and `outConverter` properties. `inConverter` and `outConverter` are functions. `inConverter` is used to automatically convert values coming from a Quickbase query, `outConverter` handles values going to Quickbase. Example: `{fid: 9, outConverter: function (x) { return x / 1000 / 3600 }}`
+1. It can be a number, to give a FID and apply no conversions.
+2. It can be an object with a single key representing conversions to apply, with the FID as the value. The key can be:
+  - 'date', to convert incoming values to JavaScript Date objects. Example: `{date: 7}`.
+  - 'numeric', to convert incoming values to  JavaScript Numbers.
+  - 'dateCorrectTimezone', to solve issues with timezones and Date fields. It will convert outgoing dates to UTC and incoming values back to the local timezone, and force all times to midnight.
+  - 'file' marks a file attachment field. To provide a value for a file attachment field with `add` or `update` use an object with the keys 'filename' and 'data', with the filename and the base64-encoded data as values. Example: `{filename: 'test', data: 'YWFhCg'}`. When querying, it will return objects with 'filename' and 'url' as their keys, providing the filename and the url that Quickbase makes the file available at. Example: `{filename: 'example.txt', url: 'https://example.quickbase.com/up/DBID/g/rka5/en/va/example.txt'}`.
+3. It can be an object with a `fid` property and optional `inConverter` and `outConverter` properties. `inConverter` and `outConverter` are functions. `inConverter` is used to automatically convert values coming from a Quickbase query, `outConverter` handles values going to Quickbase. Example: `{fid: 9, outConverter: function (x) { return x / 1000 / 3600 }}`
 
 Note that you can still interact with Quickbase fields that you didn't specify in your fields object using a plain FID.
 

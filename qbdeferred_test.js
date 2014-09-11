@@ -419,6 +419,32 @@ function getSetups(table, app) {
                })
              })
          }
+        ],
+        ["File attachements",
+         function () {
+           var name1 = '123abc'
+           var name2 =  'a&b<c>d"e\'fXYZ'
+           return table.add([
+             {thetext: 'j', thefile: {filename: name1, data: 'aaa'}},
+             {thetext: 'j', thefile: {filename: name2, data: 'bbb'}},
+           ])
+             .pipe(function () {
+               return table.query({thetext: 'j'}, 'thefile')
+             })
+             .pipe(function (files) {
+               var file1, file2
+               if (files[0].filename != name1) {
+                 file1 = files[1]
+                 file2 = files[0]
+               } else {
+                 file1 = files[0]
+                 file2 = files[1]
+               }
+               assert(file1.filename == name1)
+               assert(file2.filename == name2)
+               assert(files[0].url.indexOf('http') == 0)
+             })
+         }
         ]
       ]
     },

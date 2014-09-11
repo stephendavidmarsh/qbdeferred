@@ -303,6 +303,9 @@ function QBTable(dbid, fields, application) {
           field = {fid: fid, name: name,
                    inConverter: function (x) { return parseFloat(x) }
                   }
+        } else if ('file' in field) {
+          fid = field.file
+          field = {fid: fid, name: name, isFileAttachment: true}
         } else throw new Error('Bad specification for field "' + name + '"')
       } else if (!isNaN(field)) {
         fid = field
@@ -432,33 +435,44 @@ QBTable.prototype.query = function (query, clist, slist, options) {
 
   return this.postQB('API_DoQuery', data).pipe(function (res) {
     if (singleColumn) {
-      if (singleColumn in self.fields)
-        var inConverter = self.fields[singleColumn].inConverter
+      var field = self.fields[singleColumn]
       return res.find('f').map(function () {
-        var value = $(this).text()
-        if (inConverter)
-          value = inConverter(value)
-        return value
+        var f = $(this)
+        return self.processF(f, field)
       }).get()
     } else {
       return res.find('record').map(function () {
         var ret = {}
         $(this).find('f').each(function () {
           var f = $(this)
-          var fid = f.attr('id')
-          var value = f.text()
-          if (fid in self.fields) {
-            var inConverter = self.fields[fid].inConverter
-            if (inConverter)
-              value = inConverter(value)
-            ret[self.fields[fid].name] = value
-          }
-          ret[fid] = value
+          var field = self.fields[f.attr('id')]
+          self.processF(f, field, ret)
         })
         return ret
       }).get()
     }
   })
+}
+
+// If ret is undefined we are in singleColumn mode
+QBTable.prototype.processF = function(f, field, ret) {
+  var value = f.text()
+  if (field) {
+    var inConverter = field.inConverter
+    if (inConverter)
+      value = inConverter(value)
+    if (field.isFileAttachment) {
+      var url = f.find('url').text()
+      var filename = value.slice(0, -url.length)
+      value = {filename: filename, url: url}
+    }
+    if (ret)
+      ret[field.name] = value
+  }
+  if (ret)
+    ret[field.fid] = value
+  else
+    return value
 }
 
 QBTable.prototype.count = function (query) {
@@ -579,6 +593,13 @@ QBTable.prototype.prepareValue = function (field, value) {
     var outConverter = fieldObj.outConverter
     if (outConverter)
       value = outConverter(value)
+    if (fieldObj.isFileAttachment) {
+      if (!('filename' in value))
+        throw new Error('Bad value for file attachment field: missing filename')
+      if (!('data' in value))
+        throw new Error('Bad value for file attachment field: missing data')
+      return value
+    }
   }
   if (value instanceof Date)
     return value.getTime()
@@ -598,6 +619,8 @@ QBTable.prototype.makeCSV = function (cols, obj) {
   for (var i = 0; i < cols.length; i++) {
     var key = cols[i]
     var value = obj[key]
+    if (typeof value === 'object')
+      return false // We can't ImportCSV with file attachments
     if (typeof value === 'string') {
       if (/^\s/.test(value) ||
           /\s$/.test(value))
@@ -658,6 +681,10 @@ QBTable.prototype.makeAddEdit = function (isAdd, row) {
         value = this.escapeXML(value)
       if (key == 3 && !isAdd)
         data += '<rid>' + value + '</rid>'
+      else if (typeof value === 'object') // file attachment
+        data += '<field fid="' + key +
+        '" filename= "' + this.escapeXML(value.filename) + '">' +
+        value.data + '</field>'
       else
         data += '<field fid="' + key + '">' + value + '</field>'
     }
