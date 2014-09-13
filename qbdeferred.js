@@ -445,8 +445,9 @@ QBTable.prototype.query = function (query, clist, slist, options) {
         var ret = {}
         $(this).find('f').each(function () {
           var f = $(this)
-          var field = self.fields[f.attr('id')]
-          self.processF(f, field, ret)
+          var fid = f.attr('id')
+          var field = self.fields[fid]
+          ret[fid] = self.processF(f, field, ret)
         })
         return ret
       }).get()
@@ -469,10 +470,7 @@ QBTable.prototype.processF = function(f, field, ret) {
     if (ret)
       ret[field.name] = value
   }
-  if (ret)
-    ret[field.fid] = value
-  else
-    return value
+  return value
 }
 
 QBTable.prototype.count = function (query) {

@@ -128,7 +128,7 @@ function getSetups(table, app) {
         ],
         ["query with complex structure",
          function () {
-           return table.query({thetext: {xex: 'asd'}}, 3).pipe(function (x) {
+           return table.query({thetext: {xex: 'asd'}}, [3, 'thetext']).pipe(function (x) {
              assert(x.length == 2)
            })
          }
@@ -140,7 +140,7 @@ function getSetups(table, app) {
            })
          }
         ],
-        ["query with }",
+        ["query with } should fail",
          function () {
            return table.query({thetext: '}'})
          }, true
