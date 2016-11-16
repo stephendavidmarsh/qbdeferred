@@ -12,6 +12,11 @@ If your Quickbase application requires apptokens, include a call to `setQBApptok
 
     setQBApptoken("apptoken_here")
 
+Node.js Setup
+-------------
+To use QB Deferred with Node.js, you must have a few NPM packages available in your product. Namely: jquery, jsdom, xmldom, and xmlhttprequest as QB Deferred will require these
+when it initializes.
+
 QBTable
 -------
 
